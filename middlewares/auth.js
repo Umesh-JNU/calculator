@@ -24,7 +24,7 @@ exports.auth = async (req, res, next) => {
     next();
   } catch (error) {
     console.log(error);
-    return res.status(401).send({ error: { message: `Unauthorized` } });
+    return res.status(401).send({ error: { message: `Unauthorized or Token is expired.` } });
   }
 };
 

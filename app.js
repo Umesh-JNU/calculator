@@ -20,9 +20,9 @@ app.use(
 
 app.get("/", (req, res, next) => res.json({ message: "Server is running" }));
 
-const { userRoute } = require("./src");
+const { userRoute, dataRoute } = require("./src");
 app.use("/api/user", userRoute);
-
+app.use("/api/data", dataRoute);
 
 app.all("*", async (req, res) => {
   res
