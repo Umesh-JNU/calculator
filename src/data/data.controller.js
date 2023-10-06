@@ -10,6 +10,7 @@ exports.createData = catchAsyncError(async (req, res, next) => {
   const userId = req.userId;
   const data = await dataModel.create({ ...req.body, user: userId });
   res.status(200).json({ ...evaluate(req.body), data });
+  // res.status(200).json({ ...evaluate(req.body) });
 });
 
 // Get all documents

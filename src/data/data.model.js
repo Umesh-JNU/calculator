@@ -27,7 +27,7 @@ const dataSchema = new mongoose.Schema({
 	},
 	rehab_type: {
 		type: String,
-		enum: ['Low R1','Medium R1','Heavy R1','Additions R1','Low R2','Medium R2','Heavy R2','Additions R2'],
+		enum: ['Low_R1','Medium_R1','Heavy_R1','Additions_R1','Low_R2','Medium_R2','Heavy_R2','Additions_R2'],
 		required: [true, "Rehab Type is required."],
 	},
 	evr: {
@@ -84,7 +84,7 @@ const dataSchema = new mongoose.Schema({
 		type: Boolean,
 		required: [true, "Please a finance type."],
 	},
-	MAO: {
+	mao_ratio: {
 		type: Number,
 		min: [65, "MAO must be greater than or equal to 65"],
 		max: [100, "MAO must be less than or equal to 100"],
