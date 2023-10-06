@@ -3,7 +3,7 @@ const ErrorHandler = require("../../utils/errorHandler");
 const catchAsyncError = require("../../utils/catchAsyncError");
 const APIFeatures = require("../../utils/apiFeatures");
 const dataModel = require("./data.model");
-const evaluate = require("./calculation");
+const { evaluate, keyMetrics } = require("./calculation");
 
 // Create a new document
 exports.createData = catchAsyncError(async (req, res, next) => {
@@ -11,6 +11,26 @@ exports.createData = catchAsyncError(async (req, res, next) => {
   const data = await dataModel.create({ ...req.body, user: userId });
   res.status(200).json({ ...evaluate(req.body), data });
   // res.status(200).json({ ...evaluate(req.body) });
+});
+
+// key metrics
+exports.getKeyMetrics = catchAsyncError(async (req, res, next) => {
+  const { id } = req.params;
+  const { offer } = req.query;
+  console.log("Ket metrics", { id, offer })
+  if (!id || !offer) {
+    return next(new ErrorHandler("Please select an offer.", 400));
+  }
+  if (!isValidObjectId(id)) {
+    return next(new ErrorHandler("Invalid Data Id", 400));
+  }
+
+  const data = await dataModel.findById(id);
+  if (!data) {
+    return next(new ErrorHandler("Data not found.", 404));
+  }
+
+  res.status(200).json({ ...keyMetrics(data, offer) });
 });
 
 // Get all documents
