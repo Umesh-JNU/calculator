@@ -119,7 +119,7 @@ exports.evaluate = (data) => {
   };
 };
 
-exports.keyMetrics = (data) => {
+exports.keyMetrics = (data, isReport = false) => {
   console.log({ data });
   const { list_price, arv, mao_ratio, exit_strategy, rehab_type, footage, hold_time, holding_cost, insurance, mbc, search_cost, pmr, HOA, MFoR, offers } = data;
   console.log({ offers, lastCalc: offers[offers.length - 1] })
@@ -176,12 +176,167 @@ exports.keyMetrics = (data) => {
   // const ROI = (annual_net_income / cash_to_close * 100).toFixed(2);
   const ROI = Math.round(annual_net_income / cash_to_close * 10000) / 100;
 
-  return {
-    mao_arv,
-    projected_profit,
-    purchase_price,
-    ttl_holding_cost,
-    buying_cost,
-    ROI,
+  if (!isReport) {
+    return {
+      mao_arv,
+      projected_profit,
+      purchase_price,
+      ttl_holding_cost,
+      buying_cost,
+      ROI,
+    }
   }
-};
+
+  return {
+    rental_analysis: {
+      cost_basis: {
+        cash: 0,
+        accusation: 0,
+        dscr: 0
+      },
+      gross_rent: {
+        cash: 0,
+        accusation: 0,
+        dscr: 0
+      },
+      annual_property_tax: {
+        cash: 0,
+        accusation: 0,
+        dscr: 0
+      },
+      annual_HOA_dues: {
+        cash: 0,
+        accusation: 0,
+        dscr: 0
+      },
+      annual_management_fee: {
+        cash: 0,
+        accusation: 0,
+        dscr: 0
+      },
+      annual_cash_flow_expense: {
+        cash: 0,
+        accusation: 0,
+        dscr: 0
+      },
+      annual_vaccancy_expense: {
+        cash: 0,
+        accusation: 0,
+        dscr: 0
+      },
+      annual_maintenance_expense: {
+        cash: 0,
+        accusation: 0,
+        dscr: 0
+      },
+      annual_operating_expense: {
+        cash: 0,
+        accusation: 0,
+        dscr: 0
+      }
+    },
+    summary_return: {
+      annual_net_income: {
+        cash: 0,
+        accusation: 0,
+        dscr: 0
+      },
+      monthly_net_income: {
+        cash: 0,
+        accusation: 0,
+        dscr: 0
+      },
+      annual_ROI: {
+        cash: 0,
+        accusation: 0,
+        dscr: 0
+      }
+    },
+    summary_return_res: {
+      annual_cash_flow: {
+        cash: 0,
+        accusation: 0,
+        dscr: 0
+      },
+      monthly_cash_flow: {
+        cash: 0,
+        accusation: 0,
+        dscr: 0
+      },
+      annual_COCR: {
+        cash: 0,
+        accusation: 0,
+        dscr: 0
+      }
+    },
+    flip_cost: {
+      hold_time: 0,
+      finance_cost: {
+        purchase_price: {
+          lien1: "100%",
+          amt1: 0,
+          lien2: "0%",
+          amt2: 0,
+        },
+        rehab_cost: {
+          lien1: "100%",
+          amt1: 0,
+          lien2: "0%",
+          amt2: 0,
+        },
+        buying_cost: {
+          lien1: "100%",
+          amt1: 0,
+          lien2: "0%",
+          amt2: 0,
+        },
+        holding_cost: {
+          lien1: "100%",
+          amt1: 0,
+          lien2: "0%",
+          amt2: 0,
+        },
+        loan_points: {
+          lien1: 0,
+          lien2: 0
+        },
+        total_loan_amt: {
+          lien1: 0,
+          lien2: 0
+        },
+        est_monthly_payment: {
+          lien1: 0,
+          lien2: 0
+        }
+        //         FINANCING COSTS	1st Lien	$ Amt	2nd Lien	$ Amt
+        // Purchase Price	100%	$95,000 	0%	$0 
+        // Rehab Costs	100%	$13,725 	0%	$0 
+        // Buying Costs	0%	$0 	100%	$1,900 
+        // Holding Costs	0%	$0 	100%	$1,844 
+        // Loan Points	3		0	
+        // Is Payment due each month?	Yes		No	
+        // Payments borrowed?	Yes		$3,534	
+        // Loan Points borrowed?	Yes		$3,262	
+        // Total Loan Amount	$1,08,725 		$10,539	
+        // Interest Rate	13.00%		12%	
+        // Estimated Monthly Payment	$1,178 		$105 	
+
+      }
+    },
+    selling_cost: {
+      relator_fee: 0,
+      conv_fees: 0,
+      misc_cost: 0
+    },
+    deal_result: {
+      purchase_price: 0,
+      rehab_cost: 0,
+      buying_cost: 0,
+      holding_cost: 0,
+      finance_cost: 0,
+      selling_cost: 0,
+      net_profit_dollar: 0,
+      net_profit_pct: 0
+    }
+  }
+}

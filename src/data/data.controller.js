@@ -17,12 +17,6 @@ exports.createData = catchAsyncError(async (req, res, next) => {
 exports.getKeyMetrics = catchAsyncError(async (req, res, next) => {
   const { id } = req.params;
   console.log("Ket metrics", { id, ...req.body });
-  if (!id) {
-    return next(new ErrorHandler("Please send Data Id.", 400));
-  }
-  if (!isValidObjectId(id)) {
-    return next(new ErrorHandler("Invalid Data Id", 400));
-  }
 
   const data = await dataModel.findOneAndUpdate({ _id: id, user: req.userId }, { $push: { offers: req.body } }, {
     new: true,
@@ -34,6 +28,19 @@ exports.getKeyMetrics = catchAsyncError(async (req, res, next) => {
   }
 
   res.status(200).json({ ...keyMetrics(data) });
+});
+
+// report
+exports.getReport = catchAsyncError(async (req, res, next) => {
+  const { id } = req.params;
+  console.log("Report Analytics", { id });
+
+  const data = await dataModel.findOne({ _id: id, user: req.userId });
+  if (!data) {
+    return next(new ErrorHandler("Data not found.", 404));
+  }
+
+  res.status(200).json({ ...keyMetrics(data, isReport = true) });
 });
 
 // Get all documents

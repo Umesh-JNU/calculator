@@ -86,7 +86,7 @@ const dataSchema = new mongoose.Schema({
 	},
 	mao_ratio: {
 		type: Number,
-		min: [65, "MAO must be greater than or equal to 65"],
+		min: [0, "MAO must be greater than or equal to 0"],
 		max: [100, "MAO must be less than or equal to 100"],
 		required: [true, "MAO is required."],
 	},
