@@ -6,6 +6,6 @@ const { createData, getData, getKeyMetrics } = require("./data.controller");
 router.post("/", auth, createData);
 router.get("/:id", auth, getData);
 
-router.get("/:id/key-metrics/", auth, getKeyMetrics);
+router.put("/:id/key-metrics/", auth, getKeyMetrics);
 
 module.exports = router;

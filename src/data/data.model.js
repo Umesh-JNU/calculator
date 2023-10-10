@@ -7,27 +7,27 @@ const dataSchema = new mongoose.Schema({
 	},
 	footage: {
 		type: Number,
-    min: [0, "Square Footage must be a non-negative value."],
+		min: [0, "Square Footage must be a non-negative value."],
 		required: [true, "Square Footage is required."],
 	},
 	arv: {
 		type: Number,
-    min: [0, "After Repair Value (ARV) must be a non-negative value."],
+		min: [0, "After Repair Value (ARV) must be a non-negative value."],
 		required: [true, "After Repair Value (ARV) is required."],
 	},
 	list_price: {
 		type: Number,
-    min: [0, "List Price must be a non-negative value."],
+		min: [0, "List Price must be a non-negative value."],
 		required: [true, "List Price is required."],
 	},
 	pmr: {
 		type: Number,
-    min: [0, "Projected Monthly Rent must be a non-negative value."],
+		min: [0, "Projected Monthly Rent must be a non-negative value."],
 		required: [true, "Projected Monthly Rent is required."],
 	},
 	rehab_type: {
 		type: String,
-		enum: ['Low_R1','Medium_R1','Heavy_R1','Additions_R1','Low_R2','Medium_R2','Heavy_R2','Additions_R2'],
+		enum: ['Low_R1', 'Medium_R1', 'Heavy_R1', 'Additions_R1', 'Low_R2', 'Medium_R2', 'Heavy_R2', 'Additions_R2'],
 		required: [true, "Rehab Type is required."],
 	},
 	evr: {
@@ -42,7 +42,7 @@ const dataSchema = new mongoose.Schema({
 	},
 	MFoR: {
 		type: Number,
-    min: [0, "Management Fee of Rent (MFoR) must be non-negative."],
+		min: [0, "Management Fee of Rent (MFoR) must be non-negative."],
 		required: [true, "Management Fee of Rent (MFoR) is required."],
 	},
 	search_cost: {
@@ -57,7 +57,7 @@ const dataSchema = new mongoose.Schema({
 	},
 	exit_strategy: {
 		type: String,
-		enum: ['Rental','Light Rehab','High-end Rehab'],
+		enum: ['Rental', 'Light Rehab', 'High-end Rehab'],
 		required: [true, "Exit Strategy is required."],
 	},
 	hold_time: {
@@ -124,10 +124,27 @@ const dataSchema = new mongoose.Schema({
 		min: [0, "Miscellaneous Selling Costs must be non-negative."],
 		required: [true, "Miscellaneous Selling Costs is required."],
 	},
+	offers: [
+		{
+			offer: {
+				type: String,
+				enum: ['OFFER_1', 'OFFER_2', 'OFFER_3'],
+				required: [true, "Offer Type is required."]
+			},
+			PCP: {
+				type: Number,
+				required: [true, "Projected Contract Price is required."]
+			},
+			wholesale_fee: {
+				type: Number,
+				required: [true, "Wholesale Fee is required."]
+			}
+		}
+	],
 	user: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
-  },
+		type: mongoose.Schema.Types.ObjectId,
+		ref: "User",
+	},
 }, { timestamps: true });
 
 const dataModel = mongoose.model('Data', dataSchema);

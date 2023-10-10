@@ -119,9 +119,11 @@ exports.evaluate = (data) => {
   };
 };
 
-exports.keyMetrics = (data, offer) => {
-  console.log({ data, offer });
-  const { list_price, arv, mao_ratio, exit_strategy, rehab_type, footage, hold_time, holding_cost, insurance, mbc, search_cost, pmr, HOA, MFoR } = data;
+exports.keyMetrics = (data) => {
+  console.log({ data });
+  const { list_price, arv, mao_ratio, exit_strategy, rehab_type, footage, hold_time, holding_cost, insurance, mbc, search_cost, pmr, HOA, MFoR, offers } = data;
+  console.log({ offers, lastCalc: offers[offers.length - 1] })
+  const { PCP, wholesale_fee, offer } = offers[offers.length - 1];
 
   const rehab_cost = getRehabCost(exit_strategy, rehab_type, footage);
   const mao_arv = arv * (mao_ratio / 100) - rehab_cost;
@@ -148,7 +150,7 @@ exports.keyMetrics = (data, offer) => {
       break;
   }
 
-  const purchase_price = parseInt(process.env.PROJECT_CONTRACT_PRICE) + parseInt(process.env.WHOLESALE_FEE);
+  const purchase_price = PCP + wholesale_fee;
 
   const property_tax = 2975
   const ttl_holding_cost = Math.ceil(hold_time * (holding_cost + (property_tax + insurance) / 12));

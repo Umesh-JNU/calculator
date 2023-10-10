@@ -9,28 +9,31 @@ const { evaluate, keyMetrics } = require("./calculation");
 exports.createData = catchAsyncError(async (req, res, next) => {
   const userId = req.userId;
   const data = await dataModel.create({ ...req.body, user: userId });
-  res.status(200).json({ ...evaluate(req.body), data });
+  res.status(200).json({ ...evaluate(data), data });
   // res.status(200).json({ ...evaluate(req.body) });
 });
 
 // key metrics
 exports.getKeyMetrics = catchAsyncError(async (req, res, next) => {
   const { id } = req.params;
-  const { offer } = req.query;
-  console.log("Ket metrics", { id, offer })
-  if (!id || !offer) {
-    return next(new ErrorHandler("Please select an offer.", 400));
+  console.log("Ket metrics", { id, ...req.body });
+  if (!id) {
+    return next(new ErrorHandler("Please send Data Id.", 400));
   }
   if (!isValidObjectId(id)) {
     return next(new ErrorHandler("Invalid Data Id", 400));
   }
 
-  const data = await dataModel.findById(id);
+  const data = await dataModel.findOneAndUpdate({ _id: id, user: req.userId }, { $push: { offers: req.body } }, {
+    new: true,
+    runValidators: true,
+    useFindAndModify: false
+  });
   if (!data) {
     return next(new ErrorHandler("Data not found.", 404));
   }
 
-  res.status(200).json({ ...keyMetrics(data, offer) });
+  res.status(200).json({ ...keyMetrics(data) });
 });
 
 // Get all documents
