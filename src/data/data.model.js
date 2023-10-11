@@ -81,8 +81,9 @@ const dataSchema = new mongoose.Schema({
 		required: [true, "Holding Cost is required."],
 	},
 	cash_borrow: {
-		type: Boolean,
-		required: [true, "Please a finance type."],
+		type: String,
+		enum: ["cash", "borrow"],
+		required: [true, "Please select a finance type."],
 	},
 	mao_ratio: {
 		type: Number,
@@ -95,19 +96,52 @@ const dataSchema = new mongoose.Schema({
 		min: [0, "Lender Fees & Points must be non-negative."],
 		required: [true, "Lender Fees & Points is required."],
 	},
-	loan_point_borrow: {
-		type: Boolean,
-		default: false
+	loan_to_value: {
+		type: Number,
+		min: [0, "Loan to Value must be non-negative."],
+		required: [true, "Loan to Value is required."]
 	},
 	loan_term: {
 		type: Number,
 		min: [0, "Loan Terms must be non-negative."],
 		required: [true, "Loan Term (Months) is required."],
 	},
-	interest_rate: {
+	mortgage_int: {
 		type: Number,
-		min: [0, "Interest Rate must be non-negative."],
-		required: [true, "Interest Rate is required."],
+		min: [0, "Mortgage Interest must be non-negative."],
+		required: [true, "Mortgage Interest is required."]
+	},
+	loan_points: {
+		lien1: {
+			type: Number,
+			min: [0, "Loan Point for 1st Lien must be non-negative."],
+			required: [true, "Loan Point for 1st Lien is required."]
+		},
+		lien2: {
+			type: Number,
+			min: [0, "Loan Point for 2nd Lien must be non-negative."],
+			required: [true, "Loan Point for 2nd Lien is required."]
+		}
+	},
+	loan_point_borrow: {
+		type: Boolean,
+		default: false
+	},
+	pmt_point_borrow: {
+		type: Boolean,
+		default: false
+	},
+	interest_rate: {
+		lien1: {
+			type: Number,
+			min: [0, "Interest Rate for 1st Lien must be non-negative."],
+			required: [true, "Interest Rate for 1st Lien is required."]
+		},
+		lien2: {
+			type: Number,
+			min: [0, "Interest Rate for 2nd Lien must be non-negative."],
+			required: [true, "Interest Rate for 2nd Lien is required."]
+		}
 	},
 	realtor_fees: {
 		type: Number,

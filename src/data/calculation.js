@@ -1,5 +1,22 @@
 const ErrorHandler = require("../../utils/errorHandler");
 
+function calculatePMT(r, n, pv, fv = 0, type = 0) {
+  console.log({ r, n, pv })
+  // r = rate
+  // n = time
+  // pv = principal value
+  if (r === 0) {
+    return -(pv + fv) / n;
+  }
+
+  const pmt = (r * (pv * Math.pow(1 + r, n) + fv)) / (Math.pow(1 + r, n) - 1);
+  if (type === 1) {
+    return pmt / (1 + r);
+  }
+  console.log({ pmt });
+  return Math.round(pmt * 100) / 100;
+}
+
 const getRepairCost = (rehab_type) => {
   return parseInt(process.env[rehab_type]);
 }
@@ -166,13 +183,14 @@ exports.keyMetrics = (data, isReport = false) => {
 
   const annual_property_tax = property_tax;
   const annual_property_insurance = insurance;
-  const annual_HOA_dues = HOA;
+  const annual_HOA_dues = HOA * 12;
   const annual_management_fee = MFoR * 0.01 * gross_rent;
   const annual_cash_flow_expense = annual_property_tax + annual_property_insurance + annual_HOA_dues + annual_management_fee;
   console.log({ annual_property_tax, annual_property_insurance, annual_HOA_dues, annual_management_fee, annual_cash_flow_expense });
 
   const annual_net_income = gross_rent - annual_cash_flow_expense;
   console.log({ gross_rent, annual_cash_flow_expense, annual_net_income })
+
   // const ROI = (annual_net_income / cash_to_close * 100).toFixed(2);
   const ROI = Math.round(annual_net_income / cash_to_close * 10000) / 100;
 
@@ -187,118 +205,174 @@ exports.keyMetrics = (data, isReport = false) => {
     }
   }
 
+  const { evr, emc, loan_to_value, mortgage_int, loan_term, lender_fees, loan_points, interest_rate, realtor_fees, conv_fees, misc_cost } = data;
+
+  const annual_vaccancy_expense = evr * 0.01 * gross_rent;
+  const annual_maintenance_expense = emc * 0.01 * gross_rent;
+  const annual_operating_expense = annual_cash_flow_expense + annual_vaccancy_expense + annual_maintenance_expense;
+
+  console.log({ annual_property_tax, annual_property_insurance, annual_HOA_dues, annual_management_fee, annual_cash_flow_expense, annual_vaccancy_expense, annual_maintenance_expense, annual_operating_expense });
+
+  const loan_amount = purchase_price * loan_to_value * 0.01;
+  const monthly_prnc_int = Math.abs(calculatePMT(mortgage_int * 0.01 / 12, loan_term, loan_amount));
+  const annual_prnc_int = monthly_prnc_int * 12;
+
+  // const annual_net_income = gross_rent - annual_cash_flow_expense;
+  const monthly_net_income = Math.round((annual_net_income / 12) * 100) / 100;
+  const annual_net_income_acq = Math.round((gross_rent - annual_cash_flow_expense - annual_prnc_int) * 100) / 100;
+  const monthly_net_income_acq = Math.round((annual_net_income_acq / 12) * 100) / 100;
+
+  console.log({ gross_rent, annual_cash_flow_expense, annual_net_income, monthly_net_income, loan_amount, monthly_prnc_int, annual_prnc_int, annual_net_income_acq, monthly_net_income_acq })
+
+  const cash_to_close_acq = purchase_price - loan_amount + rental_rehab + buying_cost + loan_amount * (lender_fees * 0.01);
+  const ROI_acq = Math.round(annual_net_income_acq / cash_to_close_acq * 10000) / 100;
+
+  const annual_cash_flow = gross_rent - annual_operating_expense;
+  const monthly_cash_flow = Math.round((annual_cash_flow / 12) * 100) / 100;
+  const annual_cash_flow_acq = Math.round((annual_cash_flow - annual_prnc_int) * 100) / 100;
+  const monthly_cash_flow_acq = Math.round((annual_cash_flow_acq / 12) * 100) / 100;
+
+  const COCR = Math.round(annual_cash_flow / cash_to_close * 10000) / 100;
+  const COCR_acq = Math.round(annual_cash_flow_acq / cash_to_close_acq * 10000) / 100;
+
+  console.log({ cash_to_close_acq, ROI_acq, annual_cash_flow, monthly_cash_flow, annual_cash_flow_acq, monthly_cash_flow_acq, COCR, COCR_acq });
+
+  // selling cost
+  const total_loan_amt = {
+    lien1: 0,
+    lien2: 0,
+  }
+  const sell_hold_cost = Math.round(((property_tax + insurance) / 12 + HOA + holding_cost) * hold_time * 100) / 100;
+  const fcl1 = loan_points.lien1 * total_loan_amt.lien1 / 100 + total_loan_amt.lien1 * interest_rate.lien1 / 12 * hold_time;
+  const fcl2 = loan_points.lien2 * total_loan_amt.lien2 / 100 + total_loan_amt.lien2 * interest_rate.lien2 / 12 * hold_time;
+  const finance_cost = fcl1 + fcl2;
+
+  console.log({ realtor_fees, arv, conv_fees, misc_cost });
+  const selling_cost = Math.round((realtor_fees * 0.01 * arv + conv_fees * 0.01 * arv + misc_cost) * 100) / 100;
+
+  console.log({ purchase_price, rehab_cost, buying_cost, sell_hold_cost, finance_cost, selling_cost });
+
+  const ttl = purchase_price + rehab_cost + buying_cost + sell_hold_cost + finance_cost + selling_cost;
+  const net_profit_dollar = arv - ttl;
+  const net_profit_pct = Math.round(net_profit_dollar / ttl * 10000) / 100;
+  console.log({ net_profit_dollar, net_profit_pct })
+
   return {
     rental_analysis: {
       cost_basis: {
-        cash: 0,
-        accusation: 0,
+        cash: cost_basis,
+        acq: cost_basis,
         dscr: 0
       },
       gross_rent: {
-        cash: 0,
-        accusation: 0,
+        cash: gross_rent,
+        acq: gross_rent,
         dscr: 0
       },
       annual_property_tax: {
-        cash: 0,
-        accusation: 0,
+        cash: annual_property_tax,
+        acq: annual_property_tax,
         dscr: 0
       },
+      annual_property_insurance: {
+        cash: annual_property_insurance,
+        acq: annual_property_insurance,
+        dscr: 0,
+      },
       annual_HOA_dues: {
-        cash: 0,
-        accusation: 0,
+        cash: annual_HOA_dues,
+        acq: annual_HOA_dues,
         dscr: 0
       },
       annual_management_fee: {
-        cash: 0,
-        accusation: 0,
+        cash: annual_management_fee,
+        acq: annual_management_fee,
         dscr: 0
       },
       annual_cash_flow_expense: {
-        cash: 0,
-        accusation: 0,
+        cash: annual_cash_flow_expense,
+        acq: annual_cash_flow_expense,
         dscr: 0
       },
       annual_vaccancy_expense: {
-        cash: 0,
-        accusation: 0,
+        cash: annual_vaccancy_expense,
+        acq: annual_vaccancy_expense,
         dscr: 0
       },
       annual_maintenance_expense: {
-        cash: 0,
-        accusation: 0,
+        cash: annual_maintenance_expense,
+        acq: annual_maintenance_expense,
         dscr: 0
       },
       annual_operating_expense: {
-        cash: 0,
-        accusation: 0,
+        cash: annual_operating_expense,
+        acq: annual_operating_expense,
         dscr: 0
       }
     },
     summary_return: {
       annual_net_income: {
-        cash: 0,
-        accusation: 0,
+        cash: annual_net_income,
+        acq: annual_net_income_acq,
         dscr: 0
       },
       monthly_net_income: {
-        cash: 0,
-        accusation: 0,
+        cash: monthly_net_income,
+        acq: monthly_net_income_acq,
         dscr: 0
       },
       annual_ROI: {
-        cash: 0,
-        accusation: 0,
+        cash: ROI,
+        acq: ROI_acq,
         dscr: 0
       }
     },
     summary_return_res: {
       annual_cash_flow: {
-        cash: 0,
-        accusation: 0,
+        cash: annual_cash_flow,
+        acq: annual_cash_flow_acq,
         dscr: 0
       },
       monthly_cash_flow: {
-        cash: 0,
-        accusation: 0,
+        cash: monthly_cash_flow,
+        acq: monthly_cash_flow_acq,
         dscr: 0
       },
       annual_COCR: {
-        cash: 0,
-        accusation: 0,
+        cash: COCR,
+        acq: COCR_acq,
         dscr: 0
       }
     },
     flip_cost: {
-      hold_time: 0,
+      hold_time: hold_time,
       finance_cost: {
         purchase_price: {
           lien1: "100%",
-          amt1: 0,
+          amt1: purchase_price,
           lien2: "0%",
           amt2: 0,
         },
         rehab_cost: {
           lien1: "100%",
-          amt1: 0,
+          amt1: rehab_cost,
           lien2: "0%",
           amt2: 0,
         },
         buying_cost: {
-          lien1: "100%",
+          lien1: "0%",
           amt1: 0,
-          lien2: "0%",
-          amt2: 0,
+          lien2: "100%",
+          amt2: buying_cost,
         },
         holding_cost: {
-          lien1: "100%",
+          lien1: "0%",
           amt1: 0,
-          lien2: "0%",
-          amt2: 0,
+          lien2: "100%",
+          amt2: holding_cost,
         },
         loan_points: {
-          lien1: 0,
-          lien2: 0
+          ...loan_points,
         },
         total_loan_amt: {
           lien1: 0,
@@ -308,35 +382,22 @@ exports.keyMetrics = (data, isReport = false) => {
           lien1: 0,
           lien2: 0
         }
-        //         FINANCING COSTS	1st Lien	$ Amt	2nd Lien	$ Amt
-        // Purchase Price	100%	$95,000 	0%	$0 
-        // Rehab Costs	100%	$13,725 	0%	$0 
-        // Buying Costs	0%	$0 	100%	$1,900 
-        // Holding Costs	0%	$0 	100%	$1,844 
-        // Loan Points	3		0	
-        // Is Payment due each month?	Yes		No	
-        // Payments borrowed?	Yes		$3,534	
-        // Loan Points borrowed?	Yes		$3,262	
-        // Total Loan Amount	$1,08,725 		$10,539	
-        // Interest Rate	13.00%		12%	
-        // Estimated Monthly Payment	$1,178 		$105 	
-
       }
     },
     selling_cost: {
-      relator_fee: 0,
-      conv_fees: 0,
-      misc_cost: 0
+      realtor_fees,
+      conv_fees,
+      misc_cost
     },
     deal_result: {
-      purchase_price: 0,
-      rehab_cost: 0,
-      buying_cost: 0,
-      holding_cost: 0,
-      finance_cost: 0,
-      selling_cost: 0,
-      net_profit_dollar: 0,
-      net_profit_pct: 0
+      purchase_price,
+      rehab_cost,   // this may change
+      buying_cost,
+      holding_cost: sell_hold_cost,
+      finance_cost,
+      selling_cost,
+      net_profit_dollar,
+      net_profit_pct
     }
   }
 }
