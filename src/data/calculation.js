@@ -288,7 +288,8 @@ exports.keyMetrics = (data, isReport = false) => {
     ? arv * inPctVal(fc_pp.lien2) + rental_rehab * inPctVal(fc_rc.lien2) + buying_cost * inPctVal(fc_bc.lien2) + buying_cost * inPctVal(fc_hc.lien2) + pmt_bor_val + loan_bor_val
     : purchase_price * inPctVal(fc_pp.lien2) + rental_rehab * inPctVal(fc_rc.lien2) + buying_cost * inPctVal(fc_bc.lien2) + sell_hold_cost * inPctVal(fc_hc.lien2) + pmt_bor_val + loan_bor_val;
 
-  total_loan_amt.lien2 = Math.round(bor_loan_pmt_amt * 100) / 100;
+  const secMorPointAmt = bor_loan_pmt_amt * loan_points.lien2 / 100;
+  total_loan_amt.lien2 = Math.round(bor_loan_pmt_amt * 100) / 100 + (loan_point_borrow ? secMorPointAmt : 0);
   est_monthly_payment.lien2 = Math.round((total_loan_amt.lien2 * interest_rate.lien2 * 0.01 / 12) * 100) / 100;
 
   console.log({ bor_loan_pmt_amt, est_monthly_payment, pmt_bor_val, loan_bor_val, total_loan_amt });
