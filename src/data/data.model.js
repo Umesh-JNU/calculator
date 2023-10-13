@@ -111,6 +111,28 @@ const dataSchema = new mongoose.Schema({
 		min: [0, "Mortgage Interest must be non-negative."],
 		required: [true, "Mortgage Interest is required."]
 	},
+	flip_cost: {
+		purchase_price: {
+			type: Number,
+			min: 0,
+			required: true
+		},
+		rehab_cost: {
+			type: Number,
+			min: 0,
+			required: true
+		},
+		buying_cost: {
+			type: Number,
+			min: 0,
+			required: true
+		},
+		holding_cost: {
+			type: Number,
+			min: 0,
+			required: true
+		}
+	},
 	loan_points: {
 		lien1: {
 			type: Number,

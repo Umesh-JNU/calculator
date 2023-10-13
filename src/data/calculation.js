@@ -205,7 +205,31 @@ exports.keyMetrics = (data, isReport = false) => {
     }
   }
 
-  const { evr, emc, loan_to_value, mortgage_int, loan_term, lender_fees, loan_points, interest_rate, realtor_fees, conv_fees, misc_cost } = data;
+  const { evr, emc, loan_to_value, mortgage_int, loan_term, lender_fees, loan_points, loan_point_borrow, pmt_point_borrow, interest_rate, realtor_fees, conv_fees, misc_cost, flip_cost } = data;
+
+  const getFlipCost = (pct, cost) => {
+    const p1 = pct * 0.01;
+    const p2 = 1 - p1;
+    return {
+      lien1: `${pct}%`,
+      amt1: p1 * cost,
+      lien2: `${p2 * 100}%`,
+      amt2: p2 * cost
+    };
+  };
+
+  const fc_pp = getFlipCost(flip_cost.purchase_price, purchase_price);
+  const fc_rc = getFlipCost(flip_cost.rehab_cost, rehab_cost);
+  const fc_bc = getFlipCost(flip_cost.buying_cost, buying_cost);
+  const fc_hc = getFlipCost(flip_cost.holding_cost, ttl_holding_cost);
+  console.log({
+    flip_cost: {
+      purchase_price: fc_pp,
+      rehab_cost: fc_rc,
+      buying_cost: fc_bc,
+      holding_cost: fc_hc
+    }
+  });
 
   const annual_vaccancy_expense = evr * 0.01 * gross_rent;
   const annual_maintenance_expense = emc * 0.01 * gross_rent;
@@ -238,14 +262,40 @@ exports.keyMetrics = (data, isReport = false) => {
   console.log({ cash_to_close_acq, ROI_acq, annual_cash_flow, monthly_cash_flow, annual_cash_flow_acq, monthly_cash_flow_acq, COCR, COCR_acq });
 
   // selling cost
-  const total_loan_amt = {
-    lien1: 0,
-    lien2: 0,
-  }
   const sell_hold_cost = Math.round(((property_tax + insurance) / 12 + HOA + holding_cost) * hold_time * 100) / 100;
-  const fcl1 = loan_points.lien1 * total_loan_amt.lien1 / 100 + total_loan_amt.lien1 * interest_rate.lien1 / 12 * hold_time;
-  const fcl2 = loan_points.lien2 * total_loan_amt.lien2 / 100 + total_loan_amt.lien2 * interest_rate.lien2 / 12 * hold_time;
-  const finance_cost = fcl1 + fcl2;
+
+
+  // loan amount
+  const total_loan_amt = {
+    lien1: fc_pp.amt1 + fc_rc.amt1 + fc_bc.amt1 + fc_hc.amt1,
+    lien2: 0,
+  };
+
+  const est_monthly_payment = {
+    lien1: Math.round((total_loan_amt.lien1 * interest_rate.lien1 * 0.01 / 12) * 100) / 100,
+    lien2: 0
+  };
+  const pmt_bor_val = pmt_point_borrow ? Math.round((est_monthly_payment.lien1 * hold_time) * 100) / 100 : 0;
+  const loan_bor_val = loan_point_borrow ? Math.round((total_loan_amt.lien1 * (loan_points.lien1 / 100)) * 100) / 100 : 0;
+
+  // lien 2 loan
+  const inPctVal = (txt) => {
+    return parseFloat(txt.split('%')[0]) * 0.01;
+  };
+
+  const r1 = "Purchase Price";
+  const bor_loan_pmt_amt = r1 === "ARV"
+    ? arv * inPctVal(fc_pp.lien2) + rental_rehab * inPctVal(fc_rc.lien2) + buying_cost * inPctVal(fc_bc.lien2) + buying_cost * inPctVal(fc_hc.lien2) + pmt_bor_val + loan_bor_val
+    : purchase_price * inPctVal(fc_pp.lien2) + rental_rehab * inPctVal(fc_rc.lien2) + buying_cost * inPctVal(fc_bc.lien2) + sell_hold_cost * inPctVal(fc_hc.lien2) + pmt_bor_val + loan_bor_val;
+
+  total_loan_amt.lien2 = Math.round(bor_loan_pmt_amt * 100) / 100;
+  est_monthly_payment.lien2 = Math.round((total_loan_amt.lien2 * interest_rate.lien2 * 0.01 / 12) * 100) / 100;
+
+  console.log({ bor_loan_pmt_amt, est_monthly_payment, pmt_bor_val, loan_bor_val, total_loan_amt });
+
+  const fcl1 = loan_points.lien1 * total_loan_amt.lien1 / 100 + total_loan_amt.lien1 * (interest_rate.lien1 * 0.01) / 12 * hold_time;
+  const fcl2 = loan_points.lien2 * total_loan_amt.lien2 / 100 + total_loan_amt.lien2 * (interest_rate.lien2 * 0.01) / 12 * hold_time;
+  const finance_cost = Math.round((fcl1 + fcl2) * 100) / 100;
 
   console.log({ realtor_fees, arv, conv_fees, misc_cost });
   const selling_cost = Math.round((realtor_fees * 0.01 * arv + conv_fees * 0.01 * arv + misc_cost) * 100) / 100;
@@ -253,7 +303,7 @@ exports.keyMetrics = (data, isReport = false) => {
   console.log({ purchase_price, rehab_cost, buying_cost, sell_hold_cost, finance_cost, selling_cost });
 
   const ttl = purchase_price + rehab_cost + buying_cost + sell_hold_cost + finance_cost + selling_cost;
-  const net_profit_dollar = arv - ttl;
+  const net_profit_dollar = Math.round((arv - ttl) * 100) / 100;
   const net_profit_pct = Math.round(net_profit_dollar / ttl * 10000) / 100;
   console.log({ net_profit_dollar, net_profit_pct })
 
@@ -347,41 +397,21 @@ exports.keyMetrics = (data, isReport = false) => {
     flip_cost: {
       hold_time: hold_time,
       finance_cost: {
-        purchase_price: {
-          lien1: "100%",
-          amt1: purchase_price,
-          lien2: "0%",
-          amt2: 0,
+        purchase_price: fc_pp,
+        rehab_cost: fc_rc,
+        buying_cost: fc_bc,
+        holding_cost: fc_hc,
+        loan_points: loan_points,
+        payment_borrow: {
+          lien1: pmt_point_borrow ? "Yes" : "No",
+          lien2: pmt_bor_val
         },
-        rehab_cost: {
-          lien1: "100%",
-          amt1: rehab_cost,
-          lien2: "0%",
-          amt2: 0,
+        loan_borrow: {
+          lien1: loan_point_borrow ? "Yes" : "No",
+          lien2: loan_bor_val
         },
-        buying_cost: {
-          lien1: "0%",
-          amt1: 0,
-          lien2: "100%",
-          amt2: buying_cost,
-        },
-        holding_cost: {
-          lien1: "0%",
-          amt1: 0,
-          lien2: "100%",
-          amt2: holding_cost,
-        },
-        loan_points: {
-          ...loan_points,
-        },
-        total_loan_amt: {
-          lien1: 0,
-          lien2: 0
-        },
-        est_monthly_payment: {
-          lien1: 0,
-          lien2: 0
-        }
+        total_loan_amt: total_loan_amt,
+        est_monthly_payment: est_monthly_payment
       }
     },
     selling_cost: {
